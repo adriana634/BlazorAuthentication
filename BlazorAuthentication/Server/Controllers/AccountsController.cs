@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using BlazorAuthentication.Shared;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlazorAuthentication.Server.Controllers
@@ -7,8 +8,6 @@ namespace BlazorAuthentication.Server.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
-        private static UserModel LoggedOutUser = new UserModel { IsAuthenticated = false };
-
         private readonly UserManager<IdentityUser> userManager;
 
         public AccountsController(UserManager<IdentityUser> userManager)
