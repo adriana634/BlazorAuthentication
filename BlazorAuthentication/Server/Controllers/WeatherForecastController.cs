@@ -1,4 +1,5 @@
 using BlazorAuthentication.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlazorAuthentication.Server.Controllers
@@ -20,6 +21,7 @@ namespace BlazorAuthentication.Server.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public IEnumerable<WeatherForecast> Get()
         {
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
