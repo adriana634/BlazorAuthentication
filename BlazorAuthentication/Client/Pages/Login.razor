@@ -39,6 +39,14 @@
     private bool ShowErrors = false;
     private string Error = "";
 
+    protected override void OnInitialized()
+    {
+        if (AuthService.Authenticated == true)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
     private async Task HandleLogin()
     {
         ShowErrors = false;
@@ -47,7 +55,8 @@
 
         if (result.Successful)
         {
-            NavigationManager.NavigateTo("/");
+            var returnUrl = NavigationManager.QueryString("returnUrl") ?? "/";
+            NavigationManager.NavigateTo(returnUrl);
         }
         else
         {

@@ -12,9 +12,12 @@ namespace BlazorAuthentication.Client.Services
         private readonly AuthenticationStateProvider authenticationStateProvider;
         private readonly ILocalStorageService localStorage;
 
-        public AuthService(HttpClient httpClient,
-                           AuthenticationStateProvider authenticationStateProvider,
-                           ILocalStorageService localStorage)
+        public bool Authenticated { get; private set; } = false;
+
+        public AuthService(
+            HttpClient httpClient, 
+            AuthenticationStateProvider authenticationStateProvider, 
+            ILocalStorageService localStorage)
         {
             this.httpClient = httpClient;
             this.authenticationStateProvider = authenticationStateProvider;
@@ -23,7 +26,7 @@ namespace BlazorAuthentication.Client.Services
 
         public async Task<RegisterResult> Register(RegisterModel registerModel)
         {
-            var response = await httpClient.PostAsJsonAsync("api/accounts", registerModel);
+            using var response = await httpClient.PostAsJsonAsync("api/accounts", registerModel);
             var registerResult = await response.Content.ReadFromJsonAsync<RegisterResult>();
 
             return registerResult;
@@ -31,7 +34,7 @@ namespace BlazorAuthentication.Client.Services
 
         public async Task<LoginResult> Login(LoginModel loginModel)
         {
-            var response = await httpClient.PostAsJsonAsync("api/login", loginModel);
+            using var response = await httpClient.PostAsJsonAsync("api/login", loginModel);
             var loginResult = await response.Content.ReadFromJsonAsync<LoginResult>();
 
             if (response.IsSuccessStatusCode == false)
@@ -43,6 +46,8 @@ namespace BlazorAuthentication.Client.Services
             ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticated(loginModel.Email);
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", loginResult.Token);
 
+            Authenticated = true;
+
             return loginResult;
         }
 
@@ -51,6 +56,8 @@ namespace BlazorAuthentication.Client.Services
             await localStorage.RemoveItemAsync("authToken");
             ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsLoggedOut();
             httpClient.DefaultRequestHeaders.Authorization = null;
+
+            Authenticated = false;
         }
     }
 }

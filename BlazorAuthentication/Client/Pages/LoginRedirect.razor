@@ -1,0 +1,12 @@
+﻿@using System.Net
+
+@attribute [AllowAnonymous]
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        var returnUrl = WebUtility.UrlEncode(new Uri(NavigationManager.Uri).PathAndQuery);
+        NavigationManager.NavigateTo($"login?returnUrl={returnUrl}");
+    }
+}

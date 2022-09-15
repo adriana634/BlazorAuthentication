@@ -35,7 +35,8 @@ namespace BlazorAuthentication.Server.Controllers
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtSecurityKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expiry = DateTime.Now.AddDays(Convert.ToInt32(configuration["JwtExpiryInDays"]));
+            //var expiry = DateTime.Now.AddDays(Convert.ToInt32(configuration["JwtExpiryInDays"]));
+            var expiry = DateTime.Now.AddSeconds(20);
 
             var token = new JwtSecurityToken(
                 configuration["JwtIssuer"],
