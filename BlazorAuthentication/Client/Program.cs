@@ -18,6 +18,7 @@ builder.Services
     .AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>()
     .AddScoped<IAuthService, AuthService>()
     .AddScoped<IHttpService, HttpService>()
+    .AddScoped<IRefreshTokenService, RefreshTokenService>()
     .AddScoped<IWeatherForecastService, WeatherForecastService>();
 
 await builder.Build().RunAsync();

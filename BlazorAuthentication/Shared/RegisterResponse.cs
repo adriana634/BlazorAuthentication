@@ -1,8 +1,8 @@
 ﻿namespace BlazorAuthentication.Shared
 {
-    public class RegisterResult
+    public class RegisterResponse
     {
         public bool Successful { get; set; }
-        public IEnumerable<string> Errors { get; set; } = default!;
+        public IEnumerable<string> Errors { get; set; }
     }
 }

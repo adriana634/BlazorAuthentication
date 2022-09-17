@@ -4,9 +4,9 @@ namespace BlazorAuthentication.Client.Services
 {
     public interface IAuthService
     {
-        public bool Authenticated { get; }
-        Task<RegisterResult> Register(RegisterModel registerModel);
-        Task<LoginResult> Login(LoginModel loginModel);
+        Task<RegisterResponse> Register(RegisterRequest registerModel);
+        Task<AuthResponse> Login(LoginRequest loginModel);
         Task Logout();
+        Task<string> RefreshToken();
     }
 }

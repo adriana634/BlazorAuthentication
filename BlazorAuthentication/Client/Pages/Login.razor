@@ -35,13 +35,19 @@
 </div>
 
 @code {
-    private LoginModel loginModel = new LoginModel();
+    private LoginRequest loginModel = new LoginRequest();
     private bool ShowErrors = false;
     private string Error = "";
 
-    protected override void OnInitialized()
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
-        if (AuthService.Authenticated == true)
+        var authState = await authenticationStateTask;
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
         {
             NavigationManager.NavigateTo("/");
         }

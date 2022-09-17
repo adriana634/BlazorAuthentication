@@ -1,10 +1,9 @@
-﻿using BlazorAuthentication.Shared;
+﻿using BlazorAuthentication.Server.Data;
+using BlazorAuthentication.Server.Services;
+using BlazorAuthentication.Shared;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace BlazorAuthentication.Server.Controllers
 {
@@ -12,42 +11,36 @@ namespace BlazorAuthentication.Server.Controllers
     [ApiController]
     public class LoginController : ControllerBase
     {
-        private readonly IConfiguration configuration;
-        private readonly SignInManager<IdentityUser> signInManager;
+        private readonly ITokenService tokenService;
+        private readonly UserManager<User> userManager;
 
-        public LoginController(IConfiguration configuration, SignInManager<IdentityUser> signInManager)
+        public LoginController(ITokenService tokenService, UserManager<User> userManager)
         {
-            this.configuration = configuration;
-            this.signInManager = signInManager;
+            this.tokenService = tokenService;
+            this.userManager = userManager;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login([FromBody] LoginModel login)
+        public async Task<IActionResult> Login([FromBody] LoginRequest login)
         {
-            var result = await signInManager.PasswordSignInAsync(login.Email, login.Password, false, false);
+            var user = await userManager.FindByNameAsync(login.Email);
+            var validPassword = await userManager.CheckPasswordAsync(user, login.Password);
 
-            if (result.Succeeded == false) return BadRequest(new LoginResult { Successful = false, Error = "Username and password are invalid." });
-
-            var claims = new[]
+            if (user == null || validPassword == false)
             {
-                new Claim(ClaimTypes.Name, login.Email)
-            };
+                return Unauthorized(new AuthResponse { Successful = false, Error = "Username and password are invalid." });
+            } 
+            
+            var signingCredentials = tokenService.GetSigningCredentials();
+            var claims = await tokenService.GetClaims(user);
+            var tokenOptions = tokenService.GenerateTokenOptions(signingCredentials, claims);
+            var token = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtSecurityKey"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            //var expiry = DateTime.Now.AddDays(Convert.ToInt32(configuration["JwtExpiryInDays"]));
-            var expiry = DateTime.Now.AddSeconds(20);
+            user.RefreshToken = tokenService.GenerateRefreshToken();
+            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+            await userManager.UpdateAsync(user);
 
-            var token = new JwtSecurityToken(
-                configuration["JwtIssuer"],
-                configuration["JwtAudience"],
-                claims,
-                expires: expiry,
-                signingCredentials: creds
-            );
-
-            return Ok(new LoginResult { Successful = true, Token = new JwtSecurityTokenHandler().WriteToken(token) });
-
+            return Ok(new AuthResponse { Successful = true, Token = token, RefreshToken = user.RefreshToken });
         }
     }
 }

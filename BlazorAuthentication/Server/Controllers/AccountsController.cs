@@ -1,4 +1,5 @@
-﻿using BlazorAuthentication.Shared;
+﻿using BlazorAuthentication.Server.Data;
+using BlazorAuthentication.Shared;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,17 +9,17 @@ namespace BlazorAuthentication.Server.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
-        private readonly UserManager<IdentityUser> userManager;
+        private readonly UserManager<User> userManager;
 
-        public AccountsController(UserManager<IdentityUser> userManager)
+        public AccountsController(UserManager<User> userManager)
         {
             this.userManager = userManager;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] RegisterModel model)
+        public async Task<IActionResult> Post([FromBody] RegisterRequest model)
         {
-            var newUser = new IdentityUser { UserName = model.Email, Email = model.Email };
+            var newUser = new User { UserName = model.Email, Email = model.Email };
 
             var result = await userManager.CreateAsync(newUser, model.Password);
 
@@ -26,10 +27,12 @@ namespace BlazorAuthentication.Server.Controllers
             {
                 var errors = result.Errors.Select(error => error.Description);
 
-                return Ok(new RegisterResult { Successful = false, Errors = errors });
+                return Ok(new RegisterResponse { Successful = false, Errors = errors });
             }
 
-            return Ok(new RegisterResult { Successful = true });
+            //TODO: Roles
+
+            return Ok(new RegisterResponse { Successful = true });
         }
     }
 }

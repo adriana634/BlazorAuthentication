@@ -12,8 +12,6 @@ namespace BlazorAuthentication.Client.Services
         private readonly AuthenticationStateProvider authenticationStateProvider;
         private readonly ILocalStorageService localStorage;
 
-        public bool Authenticated { get; private set; } = false;
-
         public AuthService(
             HttpClient httpClient, 
             AuthenticationStateProvider authenticationStateProvider, 
@@ -24,18 +22,18 @@ namespace BlazorAuthentication.Client.Services
             this.localStorage = localStorage;
         }
 
-        public async Task<RegisterResult> Register(RegisterModel registerModel)
+        public async Task<RegisterResponse> Register(RegisterRequest registerModel)
         {
             using var response = await httpClient.PostAsJsonAsync("api/accounts", registerModel);
-            var registerResult = await response.Content.ReadFromJsonAsync<RegisterResult>();
+            var registerResult = await response.Content.ReadFromJsonAsync<RegisterResponse>();
 
             return registerResult;
         }
 
-        public async Task<LoginResult> Login(LoginModel loginModel)
+        public async Task<AuthResponse> Login(LoginRequest loginModel)
         {
             using var response = await httpClient.PostAsJsonAsync("api/login", loginModel);
-            var loginResult = await response.Content.ReadFromJsonAsync<LoginResult>();
+            var loginResult = await response.Content.ReadFromJsonAsync<AuthResponse>();
 
             if (response.IsSuccessStatusCode == false)
             {
@@ -43,10 +41,9 @@ namespace BlazorAuthentication.Client.Services
             }
 
             await localStorage.SetItemAsync("authToken", loginResult.Token);
+            await localStorage.SetItemAsync("refreshToken", loginResult.RefreshToken);
             ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticated(loginModel.Email);
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", loginResult.Token);
-
-            Authenticated = true;
 
             return loginResult;
         }
@@ -54,10 +51,31 @@ namespace BlazorAuthentication.Client.Services
         public async Task Logout()
         {
             await localStorage.RemoveItemAsync("authToken");
+            await localStorage.RemoveItemAsync("refreshToken");
             ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsLoggedOut();
             httpClient.DefaultRequestHeaders.Authorization = null;
+        }
 
-            Authenticated = false;
+        public async Task<string> RefreshToken()
+        {
+            var token = await localStorage.GetItemAsync<string>("authToken");
+            var refreshToken = await localStorage.GetItemAsync<string>("refreshToken");
+
+            var refreshRequest = new RefreshTokenRequest { Token = token, RefreshToken = refreshToken };
+            using var response = await httpClient.PostAsJsonAsync("api/token/refresh", refreshRequest);
+            var refreshResponse = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+            if (response.IsSuccessStatusCode == false)
+            {
+                throw new ApplicationException("Something went wrong during the refresh token action");
+            }
+
+            await localStorage.SetItemAsync("authToken", refreshResponse.Token);
+            await localStorage.SetItemAsync("refreshToken", refreshResponse.RefreshToken);
+
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", refreshResponse.Token);
+
+            return refreshResponse.Token;
         }
     }
 }

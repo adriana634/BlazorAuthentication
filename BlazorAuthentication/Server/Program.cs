@@ -1,6 +1,6 @@
 using BlazorAuthentication.Server.Data;
+using BlazorAuthentication.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -12,9 +12,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDbContext>(options => 
                             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddDefaultIdentity<IdentityUser>()
+builder.Services.AddDefaultIdentity<User>() //TODO: Roles
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
        .AddJwtBearer(options =>
        {
@@ -24,12 +25,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                ValidateAudience = true,
                ValidateLifetime = true,
                ValidateIssuerSigningKey = true,
-               ValidIssuer = builder.Configuration["JwtIssuer"],
-               ValidAudience = builder.Configuration["JwtAudience"],
-               IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSecurityKey"])),
-               ClockSkew = TimeSpan.Zero
+               ValidIssuer = jwtSettings["Issuer"],
+               ValidAudience = jwtSettings["Audience"],
+               IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecurityKey"]))
            };
        });
+
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
