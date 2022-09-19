@@ -27,10 +27,10 @@ namespace BlazorAuthentication.Server.Controllers
             {
                 var errors = result.Errors.Select(error => error.Description);
 
-                return Ok(new RegisterResponse { Successful = false, Errors = errors });
+                return BadRequest(new RegisterResponse { Successful = false, Errors = errors });
             }
 
-            //TODO: Roles
+            await userManager.AddToRoleAsync(newUser, "User");
 
             return Ok(new RegisterResponse { Successful = true });
         }
