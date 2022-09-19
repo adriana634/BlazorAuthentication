@@ -42,7 +42,7 @@ namespace BlazorAuthentication.Client.Services
 
             await localStorage.SetItemAsync("authToken", loginResult.Token);
             await localStorage.SetItemAsync("refreshToken", loginResult.RefreshToken);
-            ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticated(loginModel.Email);
+            ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticated(loginResult.Token);
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", loginResult.Token);
 
             return loginResult;
